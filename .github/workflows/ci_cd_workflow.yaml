@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 # given: workflow-level env vars (see "Workflow contexts" below)
 env:
- AWS_REGION: # your region (e.g. us-east-1)
+ AWS_REGION: us-east-1 # your region (e.g. us-east-1)
  ECR_REPOSITORY: sentiment-app-onnx  # must match the repository created in Exercise 1
 
 #defaults:
