@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Resolve the Lambda execution role ARN from a role name.
-# Writes role_arn=<arn> to $GITHUB_OUTPUT for later workflow steps.
+# Writes role_arn=<arn> to $GITHUB_OUTPUT for later workflows steps.
 # Required env: ROLE_NAME (default: LabRole), GITHUB_OUTPUT (provided by GitHub Actions)
 set -euo pipefail
 

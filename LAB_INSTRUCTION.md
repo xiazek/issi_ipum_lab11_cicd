@@ -122,7 +122,7 @@ To get familiar with the GitHub Actions UI before we start the graded exercises,
     - prints `Hello world!` using `echo` command
 
 ```yaml
-name: Hello World workflow
+name: Hello World workflows
 on:
   # workflow_dispatch option enables manual trigger button
   workflow_dispatch:
@@ -301,11 +301,11 @@ You will build the `integration` job of the CI/CD workflow so that `ruff check` 
 1. **Workflow skeleton.** Create `.github/workflows/ci_cd_workflow.yaml` (at the repo root, not under `lab11/`) triggered by `workflow_dispatch`. Use the skeleton below as a starting point and replace `# TODO` markers. The `defaults` block scopes every `run:` step to `lab11/`, so commands match what you ran locally in Exercise 1.
 
 ```yaml
-name: CI/CD workflow
+name: CI/CD workflows
 
 on: workflow_dispatch
 
-# given: workflow-level env vars (see "Workflow contexts" below)
+# given: workflows-level env vars (see "Workflow contexts" below)
 env:
  AWS_REGION: # your region (e.g. us-east-1)
  ECR_REPOSITORY: sentiment-app-onnx  # must match the repository created in Exercise 1
@@ -320,7 +320,7 @@ jobs:
    runs-on: ubuntu-latest
    steps:
      - name: Checkout code repo
-       # given: checks out your repository code so the workflow can access it
+       # given: checks out your repository code so the workflows can access it
        uses: actions/checkout@v4
 
      - name: Setup uv
@@ -519,7 +519,7 @@ deployment:
 
     # The `env:` block defines variables used inside `run:`:
     # `REGISTRY` (ECR host from the login step),
-    # `REPOSITORY` (the workflow-level `ECR_REPOSITORY`),
+    # `REPOSITORY` (the workflows-level `ECR_REPOSITORY`),
     # `IMAGE_TAG` (`github.sha`, so each commit gets its own immutable tag).
     # `docker build` then `docker tag` then `docker push` ships the image to ECR.
    - name: Build and Push Docker image
@@ -611,7 +611,7 @@ You will append the final steps to the `deployment` job: rollback recovery, role
    ```bash
    #!/usr/bin/env bash
    # Resolve the Lambda execution role ARN from a role name.
-   # Writes role_arn=<arn> to $GITHUB_OUTPUT for later workflow steps.
+   # Writes role_arn=<arn> to $GITHUB_OUTPUT for later workflows steps.
    # Required env: ROLE_NAME (default: LabRole), GITHUB_OUTPUT (provided by GitHub Actions)
    set -euo pipefail
 
