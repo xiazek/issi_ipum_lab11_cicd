@@ -20,7 +20,7 @@ jobs:
        run: |
          echo "SHA: ${{ github.sha }}"
          echo "Run ID: ${{ github.run_id }}"
-   
+
      - name: Checkout code repo
        # given: checks out your repository code so the workflow can access it
        uses: actions/checkout@v4
@@ -37,3 +37,61 @@ jobs:
 
      - name: pytest tests
        run: uv run pytest tests/ -v
+
+ deployment:
+   name: deploy_to_lambda
+   runs-on: ubuntu-latest
+   needs: integration
+   steps:
+      # Pulls your repo onto the runner so later steps see `pyproject.toml`, `Dockerfile`, scripts.
+     - name: Checkout code repo
+       uses: actions/checkout@v4
+
+      # Reads the secrets you saved in step 6 of Exercise 1 and exports them as env vars so every later AWS call (`aws ...`, `docker push` to ECR, `sam deploy`) is authenticated.
+     - name: Configure AWS credentials
+       uses: aws-actions/configure-aws-credentials@v4
+       with:
+         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # remove this line for personal accounts
+         aws-region: ${{ env.AWS_REGION }}
+
+      # Installs the `uv` binary on the runner (runners are blank Ubuntu by default).
+     - name: Setup uv
+       uses: astral-sh/setup-uv@v7
+
+      # pulls `transformers`, `torch`, `onnx`, `huggingface_hub` (heavy, only needed for the build phase, not for the Lambda image).
+     - name: Install deployment dependencies
+       run: uv sync --group integration
+
+      # Runs `prepare_model_from_hf.py`, downloads the HF weights into `model/zeroshot/`.
+     - name: Prepare model from HuggingFace Hub
+       run: uv run python -m src.scripts.prepare_model_from_hf
+
+      # Runs `export_zeroshot_to_onnx.py`, converts the model to `model/onnx/zeroshot.onnx` and copies the fast tokenizer next to it.
+      # `Dockerfile` will these files `COPY` into the Lambda image.
+     - name: Export model to ONNX
+       run: uv run python -m src.scripts.export_zeroshot_to_onnx
+
+      # `aws-actions/amazon-ecr-login@v2` does `docker login` for your private ECR registry. `
+      # id: login-ecr` lets later steps reference its output (`steps.login-ecr.outputs.registry`).
+     - name: Login to ECR
+       id: login-ecr
+       uses: aws-actions/amazon-ecr-login@v2
+       with:
+         mask-password: 'true'
+
+      # The `env:` block defines variables used inside `run:`:
+      # `REGISTRY` (ECR host from the login step),
+      # `REPOSITORY` (the workflow-level `ECR_REPOSITORY`),
+      # `IMAGE_TAG` (`github.sha`, so each commit gets its own immutable tag).
+      # `docker build` then `docker tag` then `docker push` ships the image to ECR.
+     - name: Build and Push Docker image
+       env:
+         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+         REPOSITORY: ${{ env.ECR_REPOSITORY }}
+         IMAGE_TAG: ${{ github.sha }}
+       run: |
+         docker build -t $REPOSITORY:$IMAGE_TAG .
+         docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
+         docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
