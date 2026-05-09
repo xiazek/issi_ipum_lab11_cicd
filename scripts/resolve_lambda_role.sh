@@ -4,7 +4,8 @@
 # Required env: ROLE_NAME (default: LabRole), GITHUB_OUTPUT (provided by GitHub Actions)
 set -euo pipefail
 
-ROLE_NAME="${ROLE_NAME:-LabRole}"
+#ROLE_NAME="${ROLE_NAME:-LabRole}"
+ROLE_NAME="${ROLE_NAME:-lambda-execution}"
 ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
 
 echo "Resolved role ARN: $ROLE_ARN"

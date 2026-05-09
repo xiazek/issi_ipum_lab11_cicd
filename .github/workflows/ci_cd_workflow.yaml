@@ -106,7 +106,8 @@ jobs:
        id: lambda_role
        run: bash scripts/resolve_lambda_role.sh
        env:
-         ROLE_NAME: LabRole
+#         ROLE_NAME: LabRole
+         ROLE_NAME: lambda-execution
 
      - name: Deploy with AWS SAM
        run: bash scripts/sam_deploy.sh
