@@ -1,0 +1,39 @@
+name: CI/CD workflow
+
+on: workflow_dispatch
+
+# given: workflow-level env vars (see "Workflow contexts" below)
+env:
+ AWS_REGION: # your region (e.g. us-east-1)
+ ECR_REPOSITORY: sentiment-app-onnx  # must match the repository created in Exercise 1
+
+#defaults:
+# run:
+#   working-directory: lab11
+
+jobs:
+ integration:
+   name: checks_and_tests
+   runs-on: ubuntu-latest
+   steps:
+     - name: Show run info
+       run: |
+         echo "SHA: ${{ github.sha }}"
+         echo "Run ID: ${{ github.run_id }}"
+   
+     - name: Checkout code repo
+       # given: checks out your repository code so the workflow can access it
+       uses: actions/checkout@v4
+
+     - name: Setup uv
+       uses: astral-sh/setup-uv@v7
+
+     - name: Install dependencies
+       run: uv sync --group integration
+
+
+     - name: Ruff checks
+       run: uv run ruff check .
+
+     - name: pytest tests
+       run: uv run pytest tests/ -v
